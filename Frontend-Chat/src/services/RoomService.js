@@ -1,17 +1,32 @@
-import { httpClient } from "../config/AxiosHelper"
+import api from './api'
 
-export const createRoomApi = async (roomDetail) => {
-  const response = await httpClient.post(`api/v1/rooms` ,roomDetail);
-  return response.data;
-};
-
-
-export const joinChatApi =async (roomId)=>{
-  const response = await httpClient.get(`api/v1/rooms/${roomId}`);
-      return response.data;
+export async function getRoom(roomId) {
+    const response = await api.get(`/api/v1/rooms/${roomId}`)
+    return response.data
 }
 
-export const  getMessages = async (roomId , size =50 ,page=0)=>{
-    const response = await httpClient.get(`api/v1/rooms/${roomId}/messages?size=${size}&page=${page}`)
-    return response.data;
+export async function getRoomMessages(roomId) {
+    const response = await api.get(`/api/v1/rooms/${roomId}/messages`)
+    return response.data
+}
+
+export async function createRoom(roomId) {
+    const response = await api.post('/api/v1/rooms', {
+        roomId,
+    })
+
+    return response.data
+}
+
+export async function getAllRooms() {
+    const response = await api.get('/api/v1/rooms')
+    return response.data
+}
+
+export async function deleteMessage(roomId, messageId) {
+    const response = await api.delete(
+        `/api/v1/rooms/${roomId}/messages/${messageId}`,
+    )
+
+    return response.data
 }

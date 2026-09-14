@@ -6,21 +6,25 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-
+import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Message {
+
+    private String id;
     private String sender;
     private String content;
     private LocalDateTime timeStamp;
     private MessageType type;
 
     public Message(String sender, String content, MessageType type) {
+        this.id = UUID.randomUUID().toString();
         this.sender = sender;
         this.content = content;
         this.type = type;
+        this.timeStamp = LocalDateTime.now();
     }
 }

@@ -1,8 +1,12 @@
 package com.substring.chat.entities;
 
 public enum MessageType {
-
     JOIN,
     LEAVE,
-    CHAT
+    CHAT,
+    IMAGE,
+    DELETE,
+    VIDEO,
+    FILE,
+    TYPING
 }

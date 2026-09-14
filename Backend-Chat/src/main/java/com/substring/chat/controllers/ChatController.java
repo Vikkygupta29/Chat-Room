@@ -1,6 +1,5 @@
 package com.substring.chat.controllers;
 
-
 import com.substring.chat.entities.Message;
 import com.substring.chat.entities.MessageType;
 import com.substring.chat.entities.Room;
@@ -10,58 +9,82 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @CrossOrigin("*")
 public class ChatController {
-     @Autowired
+
+    @Autowired
     private RoomRepository roomRepository;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
-     // for sending and receiving messages
-     @MessageMapping("/sendMessages/{roomId}")
-     @SendTo("/topic/room/{roomId}")
-     public Message sendMessages(@DestinationVariable String roomId ,
-             @RequestBody MessageRequest messageRequest
-             ){
-       Room room = roomRepository.findByRoomId(roomId);
+    // For sending and receiving messages
+    @MessageMapping("/sendMessages/{roomId}")
+    @SendTo("/topic/room/{roomId}")
+    public Message sendMessages(
+            @DestinationVariable String roomId,
+            @RequestBody MessageRequest messageRequest
+    ) {
 
-       Message message = new Message();
-       message.setContent(messageRequest.getContent());
-       message.setSender(messageRequest.getSender());
-       message.setTimeStamp(LocalDateTime.now());
-         MessageType type = messageRequest.getType() != null
-                 ? messageRequest.getType()
-                 : MessageType.CHAT;
+        Room room = roomRepository.findByRoomId(roomId);
 
-         message.setType(type);
+        if (room == null) {
+            throw new RuntimeException("room not found!!");
+        }
 
-       if (room == null){
-           throw new RuntimeException("room not found!!");
-       }
-         if (messageRequest.getType() == MessageType.CHAT) {
+        Message message = new Message();
 
-             message.setContent(messageRequest.getContent());
+        message.setId(UUID.randomUUID().toString());
+        message.setContent(messageRequest.getContent());
+        message.setSender(messageRequest.getSender());
+        message.setTimeStamp(LocalDateTime.now());
 
-             // save only chat messages
-             room.getMessages().add(message);
-             roomRepository.save(room);
+        MessageType type = messageRequest.getType() != null
+                ? messageRequest.getType()
+                : MessageType.CHAT;
 
-         } else if (messageRequest.getType() == MessageType.JOIN) {
+        message.setType(type);
 
-             message.setContent(message.getSender() + " joined");
+        // Save normal chat and media messages
+        if (type == MessageType.CHAT
+                || type == MessageType.IMAGE
+                || type == MessageType.VIDEO
+                || type == MessageType.FILE
+                || type == MessageType.JOIN) {
 
-         } else if (messageRequest.getType() == MessageType.LEAVE) {
+            if (type == MessageType.JOIN) {
+                message.setContent(message.getSender() + " joined");
+            }
 
-             message.setContent(message.getSender() + " left");
+            room.getMessages().add(message);
+            roomRepository.save(room);
 
-         }
+        } else if (type == MessageType.LEAVE) {
 
-         return message;
-     }
+            message.setContent(message.getSender() + " left");
+        }
 
+        return message;
+    }
+
+    @MessageMapping("/deleteMessage/{roomId}")
+    public void deleteMessage(
+            @DestinationVariable String roomId,
+            @RequestBody Message message
+    ) {
+        message.setType(MessageType.DELETE);
+
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId,
+                message
+        );
+    }
 }
