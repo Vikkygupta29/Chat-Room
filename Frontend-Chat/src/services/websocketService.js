@@ -1,7 +1,9 @@
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 
-const SOCKET_URL = 'http://localhost:8080/chat'
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+
+console.log(SOCKET_URL)
 
 let client = null
 
